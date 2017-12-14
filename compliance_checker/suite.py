@@ -13,6 +13,7 @@ from operator import itemgetter
 from netCDF4 import Dataset
 from lxml import etree as ET
 from compliance_checker.base import fix_return_value, Result, GenericFile
+from compliance_checker.yaml_parser import YamlParser
 from owslib.sos import SensorObservationService
 from owslib.swe.sensor.sml import SensorML
 from compliance_checker.protocols import opendap, netcdf, cdl
@@ -68,6 +69,14 @@ class CheckSuite(object):
             latest_version = max(v[-1] for v in versions)
             cls.checkers[spec] = cls.checkers[spec + ':latest'] = \
                 cls.checkers[':'.join((spec, latest_version))]
+
+    @classmethod
+    def load_yaml_check(cls, filename):
+        """
+        Add a new check generated from a YAML file
+        """
+        new_class = YamlParser.get_checker_class(filename)
+        cls.checkers[new_class.__name__] = new_class
 
     def _get_checks(self, checkclass, skip_checks):
         """

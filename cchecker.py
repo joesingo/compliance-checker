@@ -42,8 +42,13 @@ def main():
                         help="Defines the location of the dataset to be checked.")
     parser.add_argument('-l', '--list-tests', action='store_true', help='List the available tests')
     parser.add_argument('-d', '--download-standard-names', help='Specify a version of the cf standard name table to download as packaged version')
+    parser.add_argument('-y', '--yaml-test', action='append', default=[],
+                        help='Specify YAML files to generate check suites from')
 
     args = parser.parse_args()
+
+    for filename in args.yaml_test:
+        check_suite.load_yaml_check(filename)
 
     if args.version:
         print("IOOS compliance checker version %s" % __version__)
