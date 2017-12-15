@@ -5,6 +5,7 @@ Test the generation of a checker class from a YAML file
 """
 import pytest
 import inspect
+from copy import deepcopy
 
 from compliance_checker.tests import BaseTestCase
 from compliance_checker.base import BaseCheck
@@ -33,6 +34,31 @@ class TestYamlParsing(BaseTestCase):
             YamlParser.validate_config(valid_config)
         except ValueError:
             assert False, "Valid config was incorrectly marked as invalid"
+
+    def test_invalid_types(self):
+        """
+        Check that configs are marked as invalid if elements in it are of the
+        wrong type
+        """
+        # Start with a valid config
+        valid_config = {"suite_name": "hello",
+                        "checks": [{"check_id": "one", "params": {}}]}
+
+        c1 = deepcopy(valid_config)
+        c1["suite_name"] = ("this", "is", "not", "a", "string")
+
+        c2 = deepcopy(valid_config)
+        c2["checks"] = "oops"
+
+        c3 = deepcopy(valid_config)
+        c3["checks"][0]["check_id"] = {}
+
+        c4 = deepcopy(valid_config)
+        c4["checks"][0]["params"] = 0
+
+        for c in (c1, c2, c3, c4):
+            with pytest.raises(TypeError):
+                YamlParser.validate_config(c)
 
     def test_no_checks(self):
         """
