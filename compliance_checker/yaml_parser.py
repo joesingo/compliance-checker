@@ -1,6 +1,6 @@
 import yaml
 
-from compliance_checker.base import BaseCheck, FileNameSubstringCheck, GenericFile, Dataset
+from compliance_checker.base import BaseCheck, GenericFile, Dataset, MyMiscChecks
 
 
 class YamlParser(object):
@@ -17,7 +17,6 @@ class YamlParser(object):
         """
         # Treat config as a filename if it is a string
         if isinstance(config, str):
-            print("Trying to open as a file")
             with open(config) as f:
                 config = yaml.load(f)
 
@@ -33,21 +32,19 @@ class YamlParser(object):
 
         for check_info in config["checks"]:
             method_name = "check_{}".format(check_info["check_id"])
+            level = getattr(BaseCheck, check_info.get("check_level", "MEDIUM"))
+            kwargs = {"name": method_name, "level": level}
+            kwargs.update(check_info["params"])
 
-            level_str = check_info.get("check_level", None)
-            level = getattr(BaseCheck, level_str) if level_str else None
-
-            # Instantiate a callable check object using the params from the config
-            check_callable = FileNameSubstringCheck(name=method_name, level=level,
-                                                    **check_info["params"])  # TODO: Get base class from YAML
+            check_callable = getattr(MyMiscChecks, check_info["base_check"])
 
             # Create function that will become method of the new class. Specify
-            # check_callable as a default argument so that it is evaluated
-            # when function is defined - otherwise the function stores a
-            # reference to check_callable which changes as the for loop
+            # check_callable and kwargs as default arguments so that they are
+            # evaluated when function is defined - otherwise the function stores
+            # a reference to them which changes as the for loop
             # progresses, so only the last check is run
-            def inner(self, ds, c=check_callable):
-                return c(ds)
+            def inner(self, ds, c=check_callable, kwargs=kwargs):
+                return c(ds, kwargs.pop("name"), kwargs.pop("level"), **kwargs)
 
             inner.__name__ = str(method_name)
             class_properties[method_name] = inner
@@ -65,7 +62,7 @@ class YamlParser(object):
         :raises TypeError:  if any values are an incorrect type
         """
         required_global = {"checks": list, "suite_name": str}
-        required_percheck = {"check_id": str, "params": dict}
+        required_percheck = {"check_id": str, "params": dict, "base_check": str}
         optional_percheck = {"check_level": str}
 
         for f_name, f_type in required_global.items():

@@ -92,44 +92,35 @@ class BaseSOSDSCheck(object):
     """
     supported_ds = [SensorML]
 
-
-class BaseParametrisableCheck(object):
+class MyMiscChecks(BaseCheck):
     """
-    Base class for a single check depending on some parameters
+    Example of a collection of parametrisable checks that can be set up with a
+    YAML file
     """
-    name = ""
-    level = BaseCheck.MEDIUM
 
-    def __init__(self, level=None, name=None):
-        """
-        :param level: The weight to use when returning the result of this check
-        :param name: The name of the check to use when returning the result
-        """
-        if name:
-            self.name = name
-        if level:
-            self.level = level
-
-    def __call__(self, ds):
-        raise NotImplementedError("__call__ method must be implemented in sub class")
-
-
-class FileNameSubstringCheck(BaseParametrisableCheck):
-    """
-    Test parametrisable check that checks if a string is a substring of a filename
-
-    (just here for testing)
-    """
-    def __init__(self, string="", *args, **kwargs):
-        self.string = string
-        super(FileNameSubstringCheck, self).__init__(*args, **kwargs)
-
-    def __call__(self, ds):
+    @classmethod
+    def substring_check(cls, ds, name, level, **kwargs):
         msgs = []
-        check_result = self.string in ds.fpath
+        string = kwargs["string"]
+
+        print("Running check with string={}".format(string))
+        check_result = string in ds.fpath
         if not check_result:
-            msgs.append("String '{}' was not found in filename '{}'".format(self.string, ds.fpath))
-        return Result(self.level, check_result, self.name, msgs)
+            msgs.append("String '{}' was not found in filename '{}'".format(string, ds.fpath))
+
+        return Result(level, check_result, name, msgs)
+
+    @classmethod
+    def extension_check(cls, ds, name, level, **kwargs):
+        msgs = []
+        ext = ".{}".format(kwargs["ext"])
+
+        print("Running check with ext={}".format(ext))
+        check_result = ds.fpath.endswith(ext)
+        if not check_result:
+            msgs.append("Filename '{}' does not have '{}' extension".format(ds.fpath, ext))
+
+        return Result(level, check_result, name, msgs)
 
 
 class Result(object):

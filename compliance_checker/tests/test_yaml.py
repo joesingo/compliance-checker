@@ -25,7 +25,8 @@ class TestYamlParsing(BaseTestCase):
             {"suite_name": "hello", "checks": [{"check_id": "one"}]}
         ]
         valid_config = {"suite_name": "hello",
-                        "checks": [{"check_id": "one", "params": {}}]}
+                        "checks": [{"check_id": "one", "params": {},
+                                    "base_check": "substring_check"}]}
 
         for c in invalid_configs:
             with pytest.raises(ValueError):
@@ -42,7 +43,8 @@ class TestYamlParsing(BaseTestCase):
         """
         # Start with a valid config
         valid_config = {"suite_name": "hello",
-                        "checks": [{"check_id": "one", "params": {}}]}
+                        "checks": [{"check_id": "one", "params": {},
+                                    "base_check": "substring_check"}]}
 
         c1 = deepcopy(valid_config)
         c1["suite_name"] = ("this", "is", "not", "a", "string")
@@ -71,12 +73,13 @@ class TestYamlParsing(BaseTestCase):
         """
         Check that a checker class is generated correctly
         """
-        # TODO: Specify base check so we can check it actually runs
+        # TODO: Confirm check actually runs
+        check_cls = "substring_check"
         config = {
             "suite_name": "test_suite",
             "checks": [
-                {"check_id": "one", "params": {}},
-                {"check_id": "two", "params": {}}
+                {"check_id": "one", "params": {}, "base_check": check_cls},
+                {"check_id": "two", "params": {}, "base_check": check_cls}
             ]
         }
         new_class = YamlParser.get_checker_class(config)
