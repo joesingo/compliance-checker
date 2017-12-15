@@ -9,14 +9,20 @@ class YamlParser(object):
     """
 
     @classmethod
-    def get_checker_class(cls, filename):
+    def get_checker_class(cls, config):
         """
         Parse the given YAML file and return a checker class
+
+        :param config: Config dictionary or filename of YAML file to parse config from
         """
-        with open(filename) as f:
-            config = yaml.load(f)
-        if not isinstance(config, dict):
-            raise TypeError("Could not parse dictionary from YAML file")
+        # Treat config as a filename if it is a string
+        if isinstance(config, str):
+            print("Trying to open as a file")
+            with open(config) as f:
+                config = yaml.load(f)
+
+            if not isinstance(config, dict):
+                raise TypeError("Could not parse dictionary from YAML file")
 
         cls.validate_config(config)
 
@@ -75,6 +81,9 @@ class YamlParser(object):
             allowed_levels = ("HIGH", "MEDIUM", "LOW")
             if "check_level" in check_info and check_info["check_level"] not in allowed_levels:
                 raise ValueError("Check level must be one of {}".format(", ".join(allowed_levels)))
+
+        if len(config["checks"]) == 0:
+            raise ValueError("List of checks cannot be empty")
 
     @classmethod
     def validate_field(cls, key, val_type, d, required):
