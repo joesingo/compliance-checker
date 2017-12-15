@@ -22,10 +22,10 @@ class TestYamlParsing(BaseTestCase):
             {},
             {"suite_name": "hello"},  # Missing checks
             {"checks": []},           # Missing suite name
-            {"suite_name": "hello", "checks": [{"check_id": "one"}]}
+            {"suite_name": "hello", "checks": [{"check_id": "one"}]}  # Missing modifiers
         ]
         valid_config = {"suite_name": "hello",
-                        "checks": [{"check_id": "one", "params": {}}]}
+                        "checks": [{"check_id": "one", "modifiers": {}, "check_name": "blah"}]}
 
         for c in invalid_configs:
             with pytest.raises(ValueError):
@@ -42,7 +42,8 @@ class TestYamlParsing(BaseTestCase):
         """
         # Start with a valid config
         valid_config = {"suite_name": "hello",
-                        "checks": [{"check_id": "one", "params": {}}]}
+                        "checks": [{"check_id": "one", "modifiers": {},
+                                    "check_name": "compliance_checker.file_checks.FileSizeCheck"}]}
 
         c1 = deepcopy(valid_config)
         c1["suite_name"] = ("this", "is", "not", "a", "string")
@@ -54,7 +55,7 @@ class TestYamlParsing(BaseTestCase):
         c3["checks"][0]["check_id"] = {}
 
         c4 = deepcopy(valid_config)
-        c4["checks"][0]["params"] = 0
+        c4["checks"][0]["modifiers"] = 0
 
         for c in (c1, c2, c3, c4):
             with pytest.raises(TypeError):
@@ -71,12 +72,13 @@ class TestYamlParsing(BaseTestCase):
         """
         Check that a checker class is generated correctly
         """
-        # TODO: Specify base check so we can check it actually runs
+        # TODO: Confirm that the base check actually runs
+        check_cls = "compliance_checker.file_checks.FileSizeCheck"
         config = {
             "suite_name": "test_suite",
             "checks": [
-                {"check_id": "one", "params": {}},
-                {"check_id": "two", "params": {}}
+                {"check_id": "one", "modifiers": {}, "check_name": check_cls},
+                {"check_id": "two", "modifiers": {}, "check_name": check_cls}
             ]
         }
         new_class = YamlParser.get_checker_class(config)

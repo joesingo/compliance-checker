@@ -93,43 +93,93 @@ class BaseSOSDSCheck(object):
     supported_ds = [SensorML]
 
 
-class BaseParametrisableCheck(object):
-    """
-    Base class for a single check depending on some parameters
-    """
-    name = ""
-    level = BaseCheck.MEDIUM
+class FileError(Exception):
+    pass
 
-    def __init__(self, level=None, name=None):
+
+class ParameterError(Exception):
+    pass
+
+
+class CallableCheckBase(object):
+    """
+    Base class for callable checks that are used when generating a check suite
+    from a YAML configuration
+    """
+    # Define empty values for required arguments
+    short_name = ""
+    primary_arg_type = None
+    defaults = {}
+    message_templates = []
+    level = "HIGH"
+
+    def __init__(self, kwargs, messages=None, level="HIGH", vocabulary_ref=None):
+        self.kwargs = self.defaults.copy()
+        self.kwargs.update(kwargs)
+        self._define_messages(messages)
+        self.out_of = len(self.messages)
+        self.level = getattr(BaseCheck, level)
+        self.vocabulary_ref = vocabulary_ref
+
+        self._setup()
+
+    def _setup(self):
+        "Child classes can override this to perform validation or modification of arguments."
+        pass
+
+    def _define_messages(self, messages=None):
+        if messages:
+            self.messages = messages
+        else:
+            self.messages = []
+            for tmpl in self.message_templates:
+                try:
+                    self.messages.append(tmpl.format(**self.kwargs))
+                except KeyError as ex:
+                    self.messages = []
+                    raise ParameterError("Keyword arguments for {short_name} "
+                                         "check must include {keywrd}".
+                                         format(short_name=self.short_name,
+                                                keywrd=ex))
+
+    def get_description(self):
         """
-        :param level: The weight to use when returning the result of this check
-        :param name: The name of the check to use when returning the result
+        Generates description of check based on doc string and kwargs.
+
+        :return: description of check with kwargs inserted (if necessary) [string].
         """
-        if name:
-            self.name = name
-        if level:
-            self.level = level
+        return self.__doc__.format(**self.kwargs)
 
-    def __call__(self, ds):
-        raise NotImplementedError("__call__ method must be implemented in sub class")
+    def get_short_name(self):
+        return self.short_name.format(**self.kwargs)
 
+    def get_message_templates(self):
+        return self.message_templates
 
-class FileNameSubstringCheck(BaseParametrisableCheck):
-    """
-    Test parametrisable check that checks if a string is a substring of a filename
+    def get_messages(self):
+        # Note: messages are only provided for error/failure cases
+        #       and SUCCESS is silent.
+        return self.messages
 
-    (just here for testing)
-    """
-    def __init__(self, string="", *args, **kwargs):
-        self.string = string
-        super(FileNameSubstringCheck, self).__init__(*args, **kwargs)
+    def __call__(self, primary_arg):
+        """
+        Calls the check with primary arg and keyword args provided during instantiation.
 
-    def __call__(self, ds):
-        msgs = []
-        check_result = self.string in ds.fpath
-        if not check_result:
-            msgs.append("String '{}' was not found in filename '{}'".format(self.string, ds.fpath))
-        return Result(self.level, check_result, self.name, msgs)
+        :param primary_arg: main argument (object to check)
+        :return: Result object (from compliance checker)
+        """
+        try:
+            self._check_primary_arg(primary_arg)
+        except FileError as ex:
+            return Result(self.level, (0, self.out_of),
+                          self.get_short_name(), ex.message)
+        return self._get_result(primary_arg)
+
+    def _get_result(self, primary_arg):
+        raise NotImplementedError
+
+    def _check_primary_arg(self, primary_arg):
+        raise NotImplementedError
 
 
 class Result(object):

@@ -1,6 +1,7 @@
+import importlib
 import yaml
 
-from compliance_checker.base import BaseCheck, FileNameSubstringCheck, GenericFile, Dataset
+from compliance_checker.base import BaseCheck, GenericFile, Dataset
 
 
 class YamlParser(object):
@@ -34,12 +35,13 @@ class YamlParser(object):
         for check_info in config["checks"]:
             method_name = "check_{}".format(check_info["check_id"])
 
-            level_str = check_info.get("check_level", None)
-            level = getattr(BaseCheck, level_str) if level_str else None
-
             # Instantiate a callable check object using the params from the config
-            check_callable = FileNameSubstringCheck(name=method_name, level=level,
-                                                    **check_info["params"])  # TODO: Get base class from YAML
+            parts = check_info["check_name"].split(".")
+            module = importlib.import_module(".".join(parts[:-1]))
+            check_cls = getattr(module, parts[-1])
+
+            level_str = check_info.get("check_level", "MEDIUM")
+            check_callable = check_cls(check_info["modifiers"], level=level_str)
 
             # Create function that will become method of the new class. Specify
             # check_callable as a default argument so that it is evaluated
@@ -65,7 +67,7 @@ class YamlParser(object):
         :raises TypeError:  if any values are an incorrect type
         """
         required_global = {"checks": list, "suite_name": str}
-        required_percheck = {"check_id": str, "params": dict}
+        required_percheck = {"check_id": str, "modifiers": dict, "check_name": str}
         optional_percheck = {"check_level": str}
 
         for f_name, f_type in required_global.items():
