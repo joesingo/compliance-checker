@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 from functools import wraps
 import pprint
+import os
 
 from netCDF4 import Dataset
 from owslib.swe.observation.sos100 import SensorObservationService_1_0_0
@@ -34,6 +35,29 @@ class GenericFile(object):
 
     def filepath(self):
         return self.fpath
+
+
+class DatasetGroup(object):
+    """
+    A group of datasets that are to be tested as a single entity
+    """
+    def __init__(self, datasets):
+        self.datasets = datasets
+        self.index = -1
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self.index += 1
+        try:
+            return self.datasets[self.index]
+        except IndexError:
+            raise StopIteration
+
+    # For python 2 compatability
+    def next(self):
+        return self.__next__()
 
 
 class BaseCheck(object):

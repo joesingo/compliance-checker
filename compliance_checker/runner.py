@@ -36,7 +36,7 @@ class ComplianceChecker(object):
         """
         Static check runner.
 
-        @param  ds_loc          Dataset location (url or file)
+        @param  ds_loc          Dataset location (url or file), or list of dataset locations
         @param  checker_names    List of string names to run, should match keys of checkers dict (empty list means run all)
         @param  verbose         Verbosity of the output (0, 1, 2)
         @param  criteria        Determines failure (lenient, normal, strict)
@@ -48,6 +48,9 @@ class ComplianceChecker(object):
         """
         cs = CheckSuite()
         ds = cs.load_dataset(ds_loc)
+
+        if isinstance(ds_loc, list):
+            ds_loc = ", ".join(ds_loc)
 
         score_groups = cs.run(ds, [] if skip_checks is None else skip_checks,
                               *checker_names)

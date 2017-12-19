@@ -42,6 +42,8 @@ def main():
                         help="Defines the location of the dataset to be checked.")
     parser.add_argument('-l', '--list-tests', action='store_true', help='List the available tests')
     parser.add_argument('-d', '--download-standard-names', help='Specify a version of the cf standard name table to download as packaged version')
+    parser.add_argument('-g', '--group', action='store_true',
+                        help='Treat the list of dataset locations as group to perform a single test on')
 
     args = parser.parse_args()
 
@@ -58,6 +60,9 @@ def main():
 
     if args.download_standard_names:
         download_cf_standard_name_table(args.download_standard_names)
+
+    if args.group:
+        args.dataset_location = [args.dataset_location]
 
     return_values = []
     had_errors = []

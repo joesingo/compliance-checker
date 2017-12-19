@@ -21,15 +21,18 @@ def is_netcdf(url):
         return True
 
     # Brute force
-    with open(url, 'rb') as f:
-        magic_number = f.read(4)
-        if len(magic_number) < 4:
-            return False
-        if is_classic_netcdf(magic_number):
-            return True
-        elif is_hdf5(magic_number):
-            return True
+    try:
+        with open(url, 'rb') as f:
+            magic_number = f.read(4)
+            if len(magic_number) < 4:
+                return False
+            if is_classic_netcdf(magic_number):
+                return True
+            elif is_hdf5(magic_number):
+                return True
 
+            return False
+    except IOError:
         return False
 
 
