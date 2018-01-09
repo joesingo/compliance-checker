@@ -31,10 +31,10 @@ class TestYamlParsing(BaseTestCase):
             {},
             {"suite_name": "hello"},  # Missing checks
             {"checks": []},           # Missing suite name
-            {"suite_name": "hello", "checks": [{"check_id": "one"}]}  # Missing modifiers
+            {"suite_name": "hello", "checks": [{"check_id": "one"}]}  # Missing parameters
         ]
         valid_config = {"suite_name": "hello",
-                        "checks": [{"check_id": "one", "modifiers": {}, "check_name": "blah"}]}
+                        "checks": [{"check_id": "one", "parameters": {}, "check_name": "blah"}]}
 
         for c in invalid_configs:
             with pytest.raises(ValueError):
@@ -51,7 +51,7 @@ class TestYamlParsing(BaseTestCase):
         """
         # Start with a valid config
         valid_config = {"suite_name": "hello",
-                        "checks": [{"check_id": "one", "modifiers": {},
+                        "checks": [{"check_id": "one", "parameters": {},
                                     "check_name": "checklib.register.FileSizeCheck"}]}
 
         c1 = deepcopy(valid_config)
@@ -64,7 +64,7 @@ class TestYamlParsing(BaseTestCase):
         c3["checks"][0]["check_id"] = {}
 
         c4 = deepcopy(valid_config)
-        c4["checks"][0]["modifiers"] = 0
+        c4["checks"][0]["parameters"] = 0
 
         for c in (c1, c2, c3, c4):
             with pytest.raises(TypeError):
@@ -86,8 +86,8 @@ class TestYamlParsing(BaseTestCase):
         config = {
             "suite_name": "test_suite",
             "checks": [
-                {"check_id": "one", "modifiers": {}, "check_name": check_cls},
-                {"check_id": "two", "modifiers": {}, "check_name": check_cls}
+                {"check_id": "one", "parameters": {}, "check_name": check_cls},
+                {"check_id": "two", "parameters": {}, "check_name": check_cls}
             ]
         }
         new_class = YamlParser.get_checker_class(config)
@@ -106,10 +106,10 @@ class TestYamlParsing(BaseTestCase):
         valid_config = {
             "suite_name": "test_suite",
             "checks": [
-                {"check_id": "one", "modifiers": {},
+                {"check_id": "one", "parameters": {},
                  "check_name": "compliance_checker.tests.test_yaml.SupportDsTestCheckClass1"},
 
-                {"check_id": "one", "modifiers": {},
+                {"check_id": "one", "parameters": {},
                  "check_name": "compliance_checker.tests.test_yaml.SupportDsTestCheckClass2"}
             ]
         }

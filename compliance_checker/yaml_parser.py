@@ -41,7 +41,7 @@ class YamlParser(object):
             check_cls = getattr(module, parts[-1])
 
             level_str = check_info.get("check_level", "MEDIUM")
-            check_instance = check_cls(check_info["modifiers"], level=level_str)
+            check_instance = check_cls(check_info["parameters"], level=level_str)
 
             # Create function that will become method of the new class. Specify
             # check_instance as a default argument so that it is evaluated
@@ -71,7 +71,7 @@ class YamlParser(object):
         :raises TypeError:  if any values are an incorrect type
         """
         required_global = {"checks": list, "suite_name": str}
-        required_percheck = {"check_id": str, "modifiers": dict, "check_name": str}
+        required_percheck = {"check_id": str, "parameters": dict, "check_name": str}
         optional_percheck = {"check_level": str}
 
         for f_name, f_type in required_global.items():
