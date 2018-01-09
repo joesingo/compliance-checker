@@ -438,7 +438,7 @@ use `pip install -e .` instead)
 
 An example YAML file is shown below.
 
-```
+```yaml
 suite_name: "custom-check-suite"
 
 checks:
@@ -480,7 +480,7 @@ Each base check is represented as a sub-class of the `ParameterisableCheckBase` 
 below. The actual check performed tests if the filename of a dataset contains a given
 substring.
 
-```
+```python
 from compliance_checker.base import Result, Dataset, GenericFile
 
 from checklib.register import ParameterisableCheckBase
