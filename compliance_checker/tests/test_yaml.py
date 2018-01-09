@@ -11,6 +11,15 @@ from compliance_checker.tests import BaseTestCase
 from compliance_checker.base import BaseCheck
 from compliance_checker.yaml_parser import YamlParser
 
+from checklib.register import ParameterisableCheckBase
+
+# Create test checks for checking the supported_ds property in the generated
+# check class. For simplicity here dataset types are ints
+class SupportDsTestCheckClass1(ParameterisableCheckBase):
+    supported_ds = [1, 2, 3]
+class SupportDsTestCheckClass2(ParameterisableCheckBase):
+    supported_ds = [2, 3, 4]
+
 
 class TestYamlParsing(BaseTestCase):
 
@@ -43,7 +52,7 @@ class TestYamlParsing(BaseTestCase):
         # Start with a valid config
         valid_config = {"suite_name": "hello",
                         "checks": [{"check_id": "one", "modifiers": {},
-                                    "check_name": "compliance_checker.file_checks.FileSizeCheck"}]}
+                                    "check_name": "checklib.register.FileSizeCheck"}]}
 
         c1 = deepcopy(valid_config)
         c1["suite_name"] = ("this", "is", "not", "a", "string")
@@ -73,7 +82,7 @@ class TestYamlParsing(BaseTestCase):
         Check that a checker class is generated correctly
         """
         # TODO: Confirm that the base check actually runs
-        check_cls = "compliance_checker.file_checks.FileSizeCheck"
+        check_cls = "checklib.register.FileSizeCheck"
         config = {
             "suite_name": "test_suite",
             "checks": [
@@ -93,3 +102,18 @@ class TestYamlParsing(BaseTestCase):
         # Check name is correct
         assert new_class.__name__ == "test_suite"
 
+    def test_supported_ds(self):
+        valid_config = {
+            "suite_name": "test_suite",
+            "checks": [
+                {"check_id": "one", "modifiers": {},
+                 "check_name": "compliance_checker.tests.test_yaml.SupportDsTestCheckClass1"},
+
+                {"check_id": "one", "modifiers": {},
+                 "check_name": "compliance_checker.tests.test_yaml.SupportDsTestCheckClass2"}
+            ]
+        }
+        check_cls = YamlParser.get_checker_class(valid_config)
+        # Supported datasets for generated class should be types common to both
+        # checks
+        assert check_cls.supported_ds == [2, 3]

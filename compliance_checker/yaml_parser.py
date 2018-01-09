@@ -28,31 +28,35 @@ class YamlParser(object):
         cls.validate_config(config)
 
         # Build the attributes and methods for the generated class
-        class_properties = {
-            "supported_ds": [GenericFile, Dataset]  # TODO: Get this from YAML?
-        }
+        class_properties = {}
+
+        supported_ds_sets = []
 
         for check_info in config["checks"]:
             method_name = "check_{}".format(check_info["check_id"])
 
-            # Instantiate a callable check object using the params from the config
+            # Instantiate a check object using the params from the config
             parts = check_info["check_name"].split(".")
             module = importlib.import_module(".".join(parts[:-1]))
             check_cls = getattr(module, parts[-1])
 
             level_str = check_info.get("check_level", "MEDIUM")
-            check_callable = check_cls(check_info["modifiers"], level=level_str)
+            check_instance = check_cls(check_info["modifiers"], level=level_str)
 
             # Create function that will become method of the new class. Specify
-            # check_callable as a default argument so that it is evaluated
+            # check_instance as a default argument so that it is evaluated
             # when function is defined - otherwise the function stores a
-            # reference to check_callable which changes as the for loop
+            # reference to check_instance which changes as the for loop
             # progresses, so only the last check is run
-            def inner(self, ds, c=check_callable):
-                return c(ds)
+            def inner(self, ds, c=check_instance):
+                return c.do_check(ds)
 
             inner.__name__ = str(method_name)
             class_properties[method_name] = inner
+            supported_ds_sets.append(set(check_cls.supported_ds))
+
+        # Supported dataset types will be those that are supported by ALL checks
+        class_properties["supported_ds"] = list(set.intersection(*supported_ds_sets))
 
         return type(config["suite_name"], (BaseCheck,), class_properties)
 
