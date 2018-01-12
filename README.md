@@ -453,6 +453,7 @@ checks:
   - check_id: "attribute_check"
     parameters: {"regex": "\\d+", "attribute": "author"}
     check_name: "checklib.register.GlobalAttrRegexCheck"
+    check_level: "LOW"
 ```
 
 Explanation:
@@ -467,6 +468,7 @@ Explanation:
     in which Compliance Checker is run. Details on what this class should look like are given below.
   * `parameters` is a dictionary that is passed to `__init__` when instantiating the class
     specified in `check_name`.
+  * `check_level` is one of `HIGH`, `MEDIUM`, `LOW` and determines the priority level of the check.
 
 This check suite can be run from the command line by using the `--yaml` option:
 ```
@@ -528,7 +530,8 @@ Properties:
   formatted in the same way as `short_name`. The length of this list determines
   `self.out_of`, which is the number of points available for the check.
 * `level` is one of HIGH, MEDIUM or LOW and can be used when returning the
-  `Result` object for the check.
+  `Result` object for the check (the value specified here is the default - it
+  can be overridden in the YAML config).
 * `defaults` is a dictionary containing the default parameters to use for the
   check for any parameters not specified in the YAML config.
 

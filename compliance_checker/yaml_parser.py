@@ -40,7 +40,7 @@ class YamlParser(object):
             module = importlib.import_module(".".join(parts[:-1]))
             check_cls = getattr(module, parts[-1])
 
-            level_str = check_info.get("check_level", "MEDIUM")
+            level_str = check_info.get("check_level", None)
             check_instance = check_cls(check_info["parameters"], level=level_str)
 
             # Create function that will become method of the new class. Specify
