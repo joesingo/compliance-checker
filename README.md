@@ -495,6 +495,7 @@ class SubstringCheck(ParameterisableCheckBase):
     message_templates = ["Filename does not contain '{string}' as a substring"]
     level = "MEDIUM"
     defaults = {"string": "default-substring"}
+    required_parameters = {"string": str, "some_other_param": dict}
 
     def _setup(self):
         # Override this method to perform validation or modification of arguments
@@ -534,6 +535,10 @@ Properties:
   can be overridden in the YAML config).
 * `defaults` is a dictionary containing the default parameters to use for the
   check for any parameters not specified in the YAML config.
+* `required_parameters` is a dictionary listing all parameters that *must* be
+  present in the YAML config, and the types they should be (e.g. `str`, `list`,
+  `int`, `float`, `dict` etc...). An error is thrown when parsing the YAML
+  config if any parameters are missing or of an incorrect type.
 
 Methods:
 

@@ -21,6 +21,13 @@ class SupportDsTestCheckClass2(ParameterisableCheckBase):
     supported_ds = [2, 3, 4]
 
 
+# Create base check used to test that the parameters in the config are validated
+# against required_parameters property in the base check
+class RequiredParamsTestCheckClass(ParameterisableCheckBase):
+    required_parameters = {
+        "one": str, "two": list, "three": dict, "four": int
+    }
+
 class TestYamlParsing(BaseTestCase):
 
     def test_missing_keys(self):
@@ -117,3 +124,36 @@ class TestYamlParsing(BaseTestCase):
         # Supported datasets for generated class should be types common to both
         # checks
         assert check_cls.supported_ds == [2, 3]
+
+    def test_parameter_validation(self):
+        """
+        Check that the parameters section of the config is validated against
+        the required parameters for the base check
+        """
+        invalid_params = [
+            # "three" missing
+            ({"one": "string here", "two": ["list", "of", "things"], "four": 14}, ValueError),
+
+            # "one" wrong type
+            ({"one": ["not", "a", "string"], "two": [1, 2], "three": {1: 2}, "four": 14}, TypeError)
+        ]
+
+        check_name = "compliance_checker.tests.test_yaml.RequiredParamsTestCheckClass"
+        config = {
+            "suite_name": "test_suite",
+            "checks": [{"check_id": "one", "parameters": {}, "check_name": check_name}]
+        }
+
+        for params, ex in invalid_params:
+            config["checks"][0]["parameters"] = params
+
+            with pytest.raises(ex):
+                checker_cls = YamlParser.get_checker_class(config)
+
+        # Try one with valid params and check no exceptions raised
+        config["checks"][0]["parameters"] = {"one": "string here", "two": ["list", "of", "things"],
+                                             "three": {1: 2}, "four": 14}
+        try:
+            checker_cls = YamlParser.get_checker_class(config)
+        except (ValueError, TypeError) as ex:
+            assert False, "Valid config was incorrectly marked as invalid: {}".format(ex)

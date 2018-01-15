@@ -40,6 +40,15 @@ class YamlParser(object):
             module = importlib.import_module(".".join(parts[:-1]))
             check_cls = getattr(module, parts[-1])
 
+            # Validate parameters
+            if hasattr(check_cls, "required_parameters"):
+                try:
+                    for key, expected_type in check_cls.required_parameters.items():
+                        cls.validate_field(key, expected_type, check_info["parameters"], True)
+                except (ValueError, TypeError) as ex:
+                    msg = "Invalid parameters in YAML file: {}".format(ex)
+                    raise ex.__class__(msg)
+
             level_str = check_info.get("check_level", None)
             check_instance = check_cls(check_info["parameters"], level=level_str)
 
@@ -97,8 +106,8 @@ class YamlParser(object):
         Helper method to check a dictionary contains a given key and that the value is the
         correct type
         """
-        if required:
-            if key not in d:
-                raise ValueError("Required key {} not present".format(key))
+        if required and key not in d:
+            raise ValueError("Required key '{}' not present".format(key))
+
         if key in d and not isinstance(d[key], val_type):
-            raise TypeError("Value for field {} is not of type {}".format(key, val_type.__name__))
+            raise TypeError("Value for field '{}' is not of type '{}'".format(key, val_type.__name__))
