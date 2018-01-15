@@ -502,7 +502,8 @@ class SubstringCheck(ParameterisableCheckBase):
         pass
 
     def _check_primary_arg(self, ds):
-        # Perform any checks on the dataset before running the check
+        # Override this method to perform any checks on the dataset before
+        # running the check
         pass
 
     def _get_result(self, ds):
@@ -542,7 +543,7 @@ Properties:
 
 Methods:
 
-* `_setup` is called after the class is initialised and before the check is run
+* `_setup` is called after the class is initialised and before the check is run.
 * `_check_primary_arg` is called when the check is run, and if passed the dataset as an argument.
   Raise a `FileError` from here (from `checklib.code.errors`) to cancel the check and return a
   score of 0.
