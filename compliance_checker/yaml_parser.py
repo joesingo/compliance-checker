@@ -41,16 +41,19 @@ class YamlParser(object):
             check_cls = getattr(module, parts[-1])
 
             # Validate parameters
+            params = {}
+            params.update(check_cls.defaults)
+            params.update(check_info["parameters"])
             if hasattr(check_cls, "required_parameters"):
                 try:
                     for key, expected_type in check_cls.required_parameters.items():
-                        cls.validate_field(key, expected_type, check_info["parameters"], True)
+                        cls.validate_field(key, expected_type, params, True)
                 except (ValueError, TypeError) as ex:
                     msg = "Invalid parameters in YAML file: {}".format(ex)
                     raise ex.__class__(msg)
 
             level_str = check_info.get("check_level", None)
-            check_instance = check_cls(check_info["parameters"], level=level_str)
+            check_instance = check_cls(params, level=level_str)
 
             # Create function that will become method of the new class. Specify
             # check_instance as a default argument so that it is evaluated

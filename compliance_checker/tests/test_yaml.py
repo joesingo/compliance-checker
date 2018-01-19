@@ -13,6 +13,7 @@ from compliance_checker.yaml_parser import YamlParser
 
 from checklib.register import ParameterisableCheckBase
 
+
 # Create test checks for checking the supported_ds property in the generated
 # check class. For simplicity here dataset types are ints
 class SupportDsTestCheckClass1(ParameterisableCheckBase):
@@ -28,7 +29,24 @@ class RequiredParamsTestCheckClass(ParameterisableCheckBase):
         "one": str, "two": list, "three": dict, "four": int
     }
 
+
+# Base check to test default parameters
+class DefaultParamsTestCheckClass(ParameterisableCheckBase):
+    defaults = {"one": "hello"}
+    required_parameters = {"one": str}
+
+    def do_check(self, ds):
+        """Return parameter here so we can check it is present in the test"""
+        return self.kwargs["one"]
+
 class TestYamlParsing(BaseTestCase):
+
+    def get_import_string(self, cls):
+        """
+        Return a string to use as 'check_name' in YAML configs in tests to
+        import a class from this file
+        """
+        return "{}.{}".format("compliance_checker.tests.test_yaml", cls)
 
     def test_missing_keys(self):
         """
@@ -114,10 +132,10 @@ class TestYamlParsing(BaseTestCase):
             "suite_name": "test_suite",
             "checks": [
                 {"check_id": "one", "parameters": {},
-                 "check_name": "compliance_checker.tests.test_yaml.SupportDsTestCheckClass1"},
+                 "check_name": self.get_import_string("SupportDsTestCheckClass1")},
 
                 {"check_id": "one", "parameters": {},
-                 "check_name": "compliance_checker.tests.test_yaml.SupportDsTestCheckClass2"}
+                 "check_name": self.get_import_string("SupportDsTestCheckClass2")}
             ]
         }
         check_cls = YamlParser.get_checker_class(valid_config)
@@ -138,7 +156,7 @@ class TestYamlParsing(BaseTestCase):
             ({"one": ["not", "a", "string"], "two": [1, 2], "three": {1: 2}, "four": 14}, TypeError)
         ]
 
-        check_name = "compliance_checker.tests.test_yaml.RequiredParamsTestCheckClass"
+        check_name = self.get_import_string("RequiredParamsTestCheckClass")
         config = {
             "suite_name": "test_suite",
             "checks": [{"check_id": "one", "parameters": {}, "check_name": check_name}]
@@ -157,3 +175,26 @@ class TestYamlParsing(BaseTestCase):
             checker_cls = YamlParser.get_checker_class(config)
         except (ValueError, TypeError) as ex:
             assert False, "Valid config was incorrectly marked as invalid: {}".format(ex)
+
+    def test_default_parameters(self):
+        """
+        Check that missing parameters are copied over from the 'defaults'
+        property when generating a check class
+        """
+        config = {
+            "suite_name": "test_suite",
+            "checks": [{"check_id": "one", "parameters": {},
+                        "check_name": self.get_import_string("DefaultParamsTestCheckClass")}]
+        }
+        try:
+            checker_cls = YamlParser.get_checker_class(config)
+        except ValueError:
+            assert False, ("Config marked as invalid due to missing field - "
+                           "defaults probably not copied over")
+        checker = checker_cls()
+        try:
+            val = checker.check_one("dataset")
+        except KeyError:
+            assert False, "Default parameter not copied"
+
+        assert val == "hello"
